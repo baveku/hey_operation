@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 from langchain_anthropic import ChatAnthropic
+from langchain_mistralai import ChatMistralAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from langchain_openai import AzureChatOpenAI, ChatOpenAI
@@ -42,6 +43,22 @@ def get_llm_model(provider: str, **kwargs):
 
         return ChatAnthropic(
             model_name=kwargs.get("model_name", "claude-3-5-sonnet-20240620"),
+            temperature=kwargs.get("temperature", 0.0),
+            base_url=base_url,
+            api_key=api_key,
+        )
+    elif provider == 'mistral':
+        if not kwargs.get("base_url", ""):
+            base_url = os.getenv("MISTRAL_ENDPOINT", "https://api.mistral.ai/v1")
+        else:
+            base_url = kwargs.get("base_url")
+        if not kwargs.get("api_key", ""):
+            api_key = os.getenv("MISTRAL_API_KEY", "")
+        else:
+            api_key = kwargs.get("api_key")
+
+        return ChatMistralAI(
+            model=kwargs.get("model_name", "mistral-large-latest"),
             temperature=kwargs.get("temperature", 0.0),
             base_url=base_url,
             api_key=api_key,
@@ -123,11 +140,12 @@ def get_llm_model(provider: str, **kwargs):
 # Predefined model names for common providers
 model_names = {
     "anthropic": ["claude-3-5-sonnet-20240620", "claude-3-opus-20240229"],
-    "openai": ["gpt-4o", "gpt-4", "gpt-3.5-turbo"],
+    "openai": ["gpt-4o", "gpt-4", "gpt-3.5-turbo", "o3-mini"],
     "deepseek": ["deepseek-chat", "deepseek-reasoner"],
     "gemini": ["gemini-2.0-flash-exp", "gemini-2.0-flash-thinking-exp", "gemini-1.5-flash-latest", "gemini-1.5-flash-8b-latest", "gemini-2.0-flash-thinking-exp-1219" ],
     "ollama": ["qwen2.5:7b", "llama2:7b", "deepseek-r1:14b", "deepseek-r1:32b"],
-    "azure_openai": ["gpt-4o", "gpt-4", "gpt-3.5-turbo"]
+    "azure_openai": ["gpt-4o", "gpt-4", "gpt-3.5-turbo"],
+    "mistral": ["pixtral-large-latest", "mistral-large-latest", "mistral-small-latest", "ministral-8b-latest"]
 }
 
 # Callback to update the model name dropdown based on the selected provider
