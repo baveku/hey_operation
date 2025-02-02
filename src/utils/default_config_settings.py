@@ -17,7 +17,7 @@ def default_config():
         "llm_model_name": "gemini-2.0-flash-exp",
         "llm_temperature": 1.0,
         "llm_base_url": "",
-        "llm_api_key": "AIzaSyD8cu8YiEDJlT9Kc2ThhzdFwvLpqaDxnfw",
+        "llm_api_key": "",
         "use_own_browser": os.getenv("CHROME_PERSISTENT_SESSION", "false").lower() == "true",
         "keep_browser_open": False,
         "headless": True,
