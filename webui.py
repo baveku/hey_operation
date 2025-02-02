@@ -1,5 +1,6 @@
 import logging
 import pdb
+from email import message
 
 from dotenv import load_dotenv
 
@@ -45,6 +46,7 @@ _global_browser_context = None
 # Create the global agent state instance
 _global_agent_state = AgentState()
 
+
 async def stop_agent():
     """Request the agent to stop and update UI with enhanced feedback"""
     global _global_agent_state, _global_browser_context, _global_browser
@@ -71,6 +73,12 @@ async def stop_agent():
             gr.update(value="Stop", interactive=True),
             gr.update(interactive=True)
         )
+async def step_callback(browser_state, agent_output, step_num):
+    """Callback function to be called after each step"""
+    global _global_browser_context, _global_agent_state
+    logger.info(f"Step {step_num}: {agent_output} - {browser_state}")
+    
+
 
 async def run_browser_agent(
         agent_type,
@@ -269,7 +277,7 @@ async def run_org_agent(
             browser=_global_browser,
             browser_context=_global_browser_context,
             max_actions_per_step=max_actions_per_step,
-            tool_calling_method=tool_calling_method
+            tool_calling_method=tool_calling_method,
         )
         history = await agent.run(max_steps=max_steps)
 
@@ -500,6 +508,7 @@ async def run_with_stream(
             while not agent_task.done():
                 try:
                     encoded_screenshot = await capture_screenshot(_global_browser_context)
+                    
                     if encoded_screenshot is not None:
                         html_content = f'<img src="data:image/jpeg;base64,{encoded_screenshot}" style="width:{stream_vw}vw; height:{stream_vh}vh ; border:1px solid #ccc;">'
                     else:
@@ -619,13 +628,12 @@ def create_ui(config, theme_name="Ocean"):
     """
 
     with gr.Blocks(
-            title="Browser Use WebUI", theme=theme_map[theme_name], css=css
+            title="Autiom", theme=theme_map[theme_name], css=css
     ) as demo:
         with gr.Row():
             gr.Markdown(
                 """
-                # 🌐 Browser Use WebUI
-                ### Control your browser with AI assistance
+                # 🌐 AI Automation
                 """,
                 elem_classes=["header-text"],
             )
@@ -775,29 +783,30 @@ def create_ui(config, theme_name="Ocean"):
                     )
 
             with gr.TabItem("🤖 Run Agent", id=4):
-                task = gr.Textbox(
-                    label="Task Description",
-                    lines=4,
-                    placeholder="Enter your task here...",
-                    value=config['task'],
-                    info="Describe what you want the agent to do",
-                )
-                add_infos = gr.Textbox(
-                    label="Additional Information",
-                    lines=3,
-                    placeholder="Add any helpful context or instructions...",
-                    info="Optional hints to help the LLM complete the task",
-                )
-
                 with gr.Row():
-                    run_button = gr.Button("▶️ Run Agent", variant="primary", scale=2)
-                    stop_button = gr.Button("⏹️ Stop", variant="stop", scale=1)
-                    
-                with gr.Row():
-                    browser_view = gr.HTML(
-                        value="<h1 style='width:80vw; height:50vh'>Waiting for browser session...</h1>",
-                        label="Live Browser View",
-                )
+                    with gr.Column(scale=1) as col:
+                        task = gr.Textbox(
+                                label="Task Description",
+                                lines=4,
+                                placeholder="Enter your task here...",
+                                info="Describe what you want the agent to do",
+                            )
+                        add_infos = gr.Textbox(
+                            label="Additional Information",
+                            lines=3,
+                            placeholder="Add any helpful context or instructions...",
+                            info="Optional hints to help the LLM complete the task",
+                        )
+                        chat = gr.ChatInterface(fn=lambda exer,b: exer, autoscroll=True)
+                        
+                        with gr.Row():
+                            run_button = gr.Button("▶️ Run Agent", variant="primary", scale=2)
+                            stop_button = gr.Button("⏹️ Stop", variant="stop", scale=1)
+                    with gr.Column(scale=2):
+                        browser_view = gr.HTML(
+                            value="<h1 style='width:100vh; height:68vh'>Waiting for browser session...</h1>",
+                            label="Live Browser View",
+                        )
 
             with gr.TabItem("📁 Configuration", id=5):
                 with gr.Group():
@@ -951,18 +960,8 @@ def create_ui(config, theme_name="Ocean"):
 
     return demo
 
-def main():
-    parser = argparse.ArgumentParser(description="Gradio UI for Browser Agent")
-    parser.add_argument("--ip", type=str, default="127.0.0.1", help="IP address to bind to")
-    parser.add_argument("--port", type=int, default=7788, help="Port to listen on")
-    parser.add_argument("--theme", type=str, default="Ocean", choices=theme_map.keys(), help="Theme to use for the UI")
-    parser.add_argument("--dark-mode", action="store_true", help="Enable dark mode")
-    args = parser.parse_args()
-
-    config_dict = default_config()
-
-    demo = create_ui(config_dict, theme_name=args.theme)
-    demo.launch(server_name=args.ip, server_port=args.port)
+config_dict = default_config()
+demo = create_ui(config_dict)
 
 if __name__ == '__main__':
-    main()
+    demo.launch(server_name="127.0.0.1", server_port=7788, debug=True)

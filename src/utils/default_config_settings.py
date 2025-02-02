@@ -17,7 +17,7 @@ def default_config():
         "llm_model_name": "gemini-2.0-flash-exp",
         "llm_temperature": 1.0,
         "llm_base_url": "",
-        "llm_api_key": "",
+        "llm_api_key": os.getenv("GEMINI_API_KEY", ""),
         "use_own_browser": os.getenv("CHROME_PERSISTENT_SESSION", "false").lower() == "true",
         "keep_browser_open": False,
         "headless": True,
@@ -28,7 +28,6 @@ def default_config():
         "save_recording_path": "./tmp/record_videos",
         "save_trace_path": "./tmp/traces",
         "save_agent_history_path": "./tmp/agent_history",
-        "task": "go to google.com and type 'OpenAI' click search and give me the first url",
     }
 
 
