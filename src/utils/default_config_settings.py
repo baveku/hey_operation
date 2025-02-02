@@ -1,6 +1,7 @@
 import os
 import pickle
 import uuid
+
 import gradio as gr
 
 
@@ -12,14 +13,14 @@ def default_config():
         "max_actions_per_step": 10,
         "use_vision": True,
         "tool_calling_method": "auto",
-        "llm_provider": "openai",
-        "llm_model_name": "gpt-4o",
+        "llm_provider": "gemini",
+        "llm_model_name": "gemini-2.0-flash-exp",
         "llm_temperature": 1.0,
         "llm_base_url": "",
-        "llm_api_key": "",
+        "llm_api_key": "AIzaSyD8cu8YiEDJlT9Kc2ThhzdFwvLpqaDxnfw",
         "use_own_browser": os.getenv("CHROME_PERSISTENT_SESSION", "false").lower() == "true",
         "keep_browser_open": False,
-        "headless": False,
+        "headless": True,
         "disable_security": True,
         "enable_recording": True,
         "window_w": 1280,

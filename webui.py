@@ -1,40 +1,42 @@
-import pdb
 import logging
+import pdb
 
 from dotenv import load_dotenv
 
 load_dotenv()
-import os
-import glob
-import asyncio
 import argparse
+import asyncio
+import glob
 import os
 
 logger = logging.getLogger(__name__)
 
 import gradio as gr
-
-from browser_use.agent.service import Agent
-from playwright.async_api import async_playwright
-from browser_use.browser.browser import Browser, BrowserConfig
-from browser_use.browser.context import (
-    BrowserContextConfig,
-    BrowserContextWindowSize,
-)
+from gradio.themes import (Base, Citrus, Default, Glass, Monochrome, Ocean,
+                           Origin, Soft)
 from langchain_ollama import ChatOllama
 from playwright.async_api import async_playwright
-from src.utils.agent_state import AgentState
 
-from src.utils import utils
+from browser_use.agent.service import Agent
+from browser_use.browser.browser import Browser, BrowserConfig
+from browser_use.browser.context import (BrowserContextConfig,
+                                         BrowserContextWindowSize)
 from src.agent.custom_agent import CustomAgent
+from src.agent.custom_prompts import (CustomAgentMessagePrompt,
+                                      CustomSystemPrompt)
 from src.browser.custom_browser import CustomBrowser
-from src.agent.custom_prompts import CustomSystemPrompt, CustomAgentMessagePrompt
-from src.browser.custom_context import BrowserContextConfig, CustomBrowserContext
+from src.browser.custom_context import (BrowserContextConfig,
+                                        CustomBrowserContext)
 from src.controller.custom_controller import CustomController
-from gradio.themes import Citrus, Default, Glass, Monochrome, Ocean, Origin, Soft, Base
-from src.utils.default_config_settings import default_config, load_config_from_file, save_config_to_file, save_current_config, update_ui_from_config
-from src.utils.utils import update_model_dropdown, get_latest_files, capture_screenshot
-
+from src.utils import utils
+from src.utils.agent_state import AgentState
+from src.utils.default_config_settings import (default_config,
+                                               load_config_from_file,
+                                               save_config_to_file,
+                                               save_current_config,
+                                               update_ui_from_config)
+from src.utils.utils import (capture_screenshot, get_latest_files,
+                             update_model_dropdown)
 
 # Global variables for persistence
 _global_browser = None
@@ -850,7 +852,6 @@ def create_ui(config, theme_name="Ocean"):
 
             with gr.TabItem("📊 Results", id=6):
                 with gr.Group():
-
                     recording_display = gr.Video(label="Latest Recording")
 
                     gr.Markdown("### Results")
