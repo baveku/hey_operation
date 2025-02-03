@@ -629,7 +629,7 @@ def create_ui(config, theme_name="Ocean"):
     with gr.Blocks(
             title="Autiom", theme=theme_map[theme_name], css=css
     ) as demo:
-        local_storage = gr.BrowserState(["", ""])
+        local_inputs = gr.BrowserState(["", ""], storage_key="inputs")
         with gr.Row():
             gr.Markdown(
                 """
@@ -673,11 +673,11 @@ def create_ui(config, theme_name="Ocean"):
                                     info="Optional hints to help the LLM complete the task",
                                 )
 
-                                @demo.load(inputs=[local_storage], outputs=[task, add_infos])
+                                @demo.load(inputs=[local_inputs], outputs=[task, add_infos])
                                 def load_from_local_storage(saved_values):
                                     print("loading from local storage", saved_values)
                                     return saved_values[0], saved_values[1]
-                                @gr.on([task.change, add_infos.change], inputs=[task, add_infos], outputs=[local_storage])
+                                @gr.on([task.change, add_infos.change], inputs=[task, add_infos], outputs=[local_inputs])
                                 def save_to_local_storage(username, password):
                                     return [username, password]
                                 
