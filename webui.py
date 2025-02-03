@@ -629,7 +629,7 @@ def create_ui(config, theme_name="Ocean"):
     with gr.Blocks(
             title="Autiom", theme=theme_map[theme_name], css=css
     ) as demo:
-        local_inputs = gr.BrowserState(["", ""], storage_key="inputs")
+        local_inputs = gr.BrowserState(["", ""], storage_key="inputs", secret="ABCOK")
         with gr.Row():
             gr.Markdown(
                 """
@@ -921,7 +921,8 @@ def create_ui(config, theme_name="Ocean"):
                                         agent_type, llm_provider, llm_model_name, llm_temperature, llm_base_url, llm_api_key,
                                         use_own_browser, keep_browser_open, headless, disable_security, window_w, window_h,
                                         save_recording_path, save_agent_history_path, save_trace_path,  # Include the new path
-                                        enable_recording, task, add_infos, max_steps, use_vision, max_actions_per_step, tool_calling_method
+                                        enable_recording, task, add_infos, max_steps, use_vision, max_actions_per_step, tool_calling_method,
+                                        settings_tabs, tabs
                                     ],
                                 outputs=[
                                     browser_view,           # Browser view
@@ -1002,4 +1003,4 @@ config_dict = default_config()
 demo = create_ui(config_dict, theme_name=args.theme)
 
 if __name__ == '__main__':
-    demo.launch(server_name="127.0.0.1", server_port=7788, debug=True)
+    demo.launch(server_name=args.ip, server_port=args.port)
