@@ -467,6 +467,7 @@ async def run_with_stream(
         html_content = f"<h1 style='width:{stream_vw}vw; height:{stream_vh}vh'>Using browser...</h1>"
         yield [html_content] + list(result)
     else:
+        
         try:
             _global_agent_state.clear_stop()
             # Run the browser agent in the background
@@ -502,7 +503,21 @@ async def run_with_stream(
             final_result = errors = model_actions = model_thoughts = ""
             latest_videos = trace = history_file = None
 
-
+            history: list = [{"role": "assistant", "content": "I'm thinking..."}]
+            yield [
+                html_content,
+                final_result,
+                errors,
+                model_actions,
+                model_thoughts,
+                latest_videos,
+                trace,
+                history_file,
+                gr.update(value="Stop", interactive=True),  # Re-enable stop button
+                gr.update(interactive=True),  # Re-enable run button
+                history
+            ]
+            now = _global_agent_state.now
             # Periodically update the stream while the agent task is running
             while not agent_task.done():
                 try:
@@ -516,6 +531,7 @@ async def run_with_stream(
                     html_content = f"<h1 style='width:{stream_vw}vw; height:{stream_vh}vh'>Waiting for browser session...</h1>"
 
                 if _global_agent_state and _global_agent_state.is_stop_requested():
+                    history.append({"role": "assistant", "content": "Stop requested - the agent will halt at the next safe point"})
                     yield [
                         html_content,
                         final_result,
@@ -527,9 +543,12 @@ async def run_with_stream(
                         history_file,
                         gr.update(value="Stopping...", interactive=False),  # stop_button
                         gr.update(interactive=False),  # run_button
+                        history
                     ]
                     break
                 else:
+                    if _global_agent_state.will_update_model_thinking(now):
+                        history.append({"role": "assistant", "content": _global_agent_state.get_model_thinking()})
                     yield [
                         html_content,
                         final_result,
@@ -540,7 +559,8 @@ async def run_with_stream(
                         trace,
                         history_file,
                         gr.update(value="Stop", interactive=True),  # Re-enable stop button
-                        gr.update(interactive=True)  # Re-enable run button
+                        gr.update(interactive=True),  # Re-enable run button
+                        history
                     ]
                 await asyncio.sleep(0.05)
 
@@ -548,6 +568,7 @@ async def run_with_stream(
             try:
                 result = await agent_task
                 final_result, errors, model_actions, model_thoughts, latest_videos, trace, history_file, stop_button, run_button = result
+                history.append({"role": "assistant", "content": final_result})
             except gr.Error:
                 final_result = ""
                 model_actions = ""
@@ -556,7 +577,8 @@ async def run_with_stream(
 
             except Exception as e:
                 errors = f"Agent error: {str(e)}"
-
+                history.append({"role": "assistant", "content": errors})
+            
             yield [
                 html_content,
                 final_result,
@@ -567,11 +589,13 @@ async def run_with_stream(
                 trace,
                 history_file,
                 stop_button,
-                run_button
+                run_button,
+                history
             ]
 
         except Exception as e:
             import traceback
+            error_msg = {"role": "assistant", "content": f"Error: {str(e)}\n{traceback.format_exc()}"}
             yield [
                 f"<h1 style='width:{stream_vw}vw; height:{stream_vh}vh'>Waiting for browser session...</h1>",
                 "",
@@ -582,7 +606,8 @@ async def run_with_stream(
                 None,
                 None,
                 gr.update(value="Stop", interactive=True),  # Re-enable stop button
-                gr.update(interactive=True)    # Re-enable run button
+                gr.update(interactive=True),    # Re-enable run button
+                [error_msg]
             ]
 
 # Define the theme map globally
@@ -648,13 +673,11 @@ def create_ui(config, theme_name="Ocean"):
                                     ## 🤖 Agent Thinking
                                     """
                                 )
+
                                 chatbot = gr.Chatbot(
+                                    value=[{"role": "assistant", "content": "I'm waiting..."}],
                                     type="messages",
                                     label="Agent",
-                                    avatar_images=(
-                                        None,
-                                        "https://em-content.zobj.net/source/twitter/141/parrot_1f99c.png",
-                                    ),
                                 )
                                 
                             with gr.Column(scale=1):
@@ -689,6 +712,30 @@ def create_ui(config, theme_name="Ocean"):
                                 value="<h1 style='width:100vh; height:68vh'>Waiting for browser session...</h1>",
                                 label="Live Browser View",
                             )
+                with gr.TabItem("📊 Results", id=6):
+                    with gr.Group():
+                        with gr.Row(equal_height=True):
+                            with gr.Column():
+                                with gr.Group():
+                                    final_result_output = gr.Textbox(
+                                        label="Final Result", lines=15, show_label=True
+                                    )
+                                with gr.Group():
+                                    errors_output = gr.Textbox(
+                                        label="Errors", lines=3, show_label=True
+                                    )
+                            recording_display = gr.Video(label="Latest Recording")
+                        with gr.Row(equal_height=True):
+                            with gr.Column():
+                                model_actions_output = gr.Textbox(
+                                    label="Model Actions", show_label=True
+                                )
+                                model_thoughts_output = gr.Textbox(
+                                    label="Model Thoughts", show_label=True
+                                )
+                            with gr.Column():
+                                trace_file = gr.File(label="Trace File")
+                                agent_history_file = gr.File(label="Agent History")
 
 
                 with gr.TabItem("⚙️ Settings", id=1):
@@ -879,34 +926,6 @@ def create_ui(config, theme_name="Ocean"):
                                 outputs=[config_status]
                             )
 
-                        with gr.TabItem("📊 Results", id=6):
-                            with gr.Group():
-                                recording_display = gr.Video(label="Latest Recording")
-
-                                gr.Markdown("### Results")
-                                with gr.Row():
-                                    with gr.Column():
-                                        final_result_output = gr.Textbox(
-                                            label="Final Result", lines=3, show_label=True
-                                        )
-                                    with gr.Column():
-                                        errors_output = gr.Textbox(
-                                            label="Errors", lines=3, show_label=True
-                                        )
-                                with gr.Row():
-                                    with gr.Column():
-                                        model_actions_output = gr.Textbox(
-                                            label="Model Actions", lines=3, show_label=True
-                                        )
-                                    with gr.Column():
-                                        model_thoughts_output = gr.Textbox(
-                                            label="Model Thoughts", lines=3, show_label=True
-                                        )
-
-                                trace_file = gr.File(label="Trace File")
-
-                                agent_history_file = gr.File(label="Agent History")
-
                             # Bind the stop button click event after errors_output is defined
                             stop_button.click(
                                 fn=stop_agent,
@@ -921,7 +940,7 @@ def create_ui(config, theme_name="Ocean"):
                                         agent_type, llm_provider, llm_model_name, llm_temperature, llm_base_url, llm_api_key,
                                         use_own_browser, keep_browser_open, headless, disable_security, window_w, window_h,
                                         save_recording_path, save_agent_history_path, save_trace_path,  # Include the new path
-                                        enable_recording, task, add_infos, max_steps, use_vision, max_actions_per_step, tool_calling_method
+                                        enable_recording, task, add_infos, max_steps, use_vision, max_actions_per_step, tool_calling_method,
                                     ],
                                 outputs=[
                                     browser_view,           # Browser view
@@ -933,7 +952,8 @@ def create_ui(config, theme_name="Ocean"):
                                     trace_file,             # Trace file
                                     agent_history_file,     # Agent history file
                                     stop_button,            # Stop button
-                                    run_button              # Run button
+                                    run_button,             # Run button
+                                    chatbot                 # Chatbot        
                                 ],
                             )
 

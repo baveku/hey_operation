@@ -1,37 +1,31 @@
-import json
-import logging
-import pdb
-import traceback
-from typing import Optional, Type, List, Dict, Any, Callable
-from PIL import Image, ImageDraw, ImageFont
-import os
 import base64
 import io
+import json
+import logging
+import os
+import pdb
 import platform
-from browser_use.agent.prompts import SystemPrompt, AgentMessagePrompt
+import traceback
+from shlex import join
+from typing import Any, Callable, Dict, List, Optional, Type
+
+from json_repair import repair_json
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import BaseMessage
+from PIL import Image, ImageDraw, ImageFont
+
+from browser_use.agent.prompts import AgentMessagePrompt, SystemPrompt
 from browser_use.agent.service import Agent
-from browser_use.agent.views import (
-    ActionResult,
-    ActionModel,
-    AgentHistoryList,
-    AgentOutput,
-    AgentHistory,
-)
+from browser_use.agent.views import (ActionModel, ActionResult, AgentHistory,
+                                     AgentHistoryList, AgentOutput)
 from browser_use.browser.browser import Browser
 from browser_use.browser.context import BrowserContext
 from browser_use.browser.views import BrowserStateHistory
 from browser_use.controller.service import Controller
-from browser_use.telemetry.views import (
-	AgentEndTelemetryEvent,
-	AgentRunTelemetryEvent,
-	AgentStepTelemetryEvent,
-)
+from browser_use.telemetry.views import (AgentEndTelemetryEvent,
+                                         AgentRunTelemetryEvent,
+                                         AgentStepTelemetryEvent)
 from browser_use.utils import time_execution_async
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    BaseMessage,
-)
-from json_repair import repair_json
 from src.utils.agent_state import AgentState
 
 from .custom_massage_manager import CustomMassageManager
@@ -150,6 +144,13 @@ class CustomAgent(Agent):
         logger.info(f"📋 Future Plans: \n{response.current_state.future_plans}")
         logger.info(f"🤔 Thought: {response.current_state.thought}")
         logger.info(f"🎯 Summary: {response.current_state.summary}")
+        model_think = [
+            f"🤔 {response.current_state.thought}",
+            f"🎯 Summary: {response.current_state.summary}",
+        ]
+        self.agent_state.set_model_thinking(
+        "\n".join(model_think)
+        )
         for i, action in enumerate(response.action):
             logger.info(
                 f"🛠️  Action {i + 1}/{len(response.action)}: {action.model_dump_json(exclude_unset=True)}"
