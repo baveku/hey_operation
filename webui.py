@@ -632,6 +632,24 @@ async def close_global_browser():
     if _global_browser:
         await _global_browser.close()
         _global_browser = None
+        
+async def run_deep_search(research_task, max_search_iteration_input, max_query_per_iter_input, llm_provider, llm_model_name, llm_temperature, llm_base_url, llm_api_key, use_vision, headless):
+    from src.utils.deep_research import deep_research
+    
+    llm = utils.get_llm_model(
+            provider=llm_provider,
+            model_name=llm_model_name,
+            temperature=llm_temperature,
+            base_url=llm_base_url,
+            api_key=llm_api_key,
+        )
+    markdown_content, file_path = await deep_research(research_task, llm, 
+                                                        max_search_iterations=max_search_iteration_input,
+                                                        max_query_num=max_query_per_iter_input,
+                                                        use_vision=use_vision,
+                                                        headless=headless)
+    return markdown_content, file_path
+    
 
 def create_ui(config, theme_name="Ocean"):
     css = """
